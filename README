@@ -1,11 +1,73 @@
 NAME
-    Castella -
+    Castella - A web application framework for PSGI/Plack
 
 SYNOPSIS
-      use Castella;
+      package  MyApp;
+      use Castella -base;
+
+      package  MyApp::SomeModule;
+      use MyApp;
 
 DESCRIPTION
-    Castella is
+    Castella is oreore waf!
+
+    Write code easily!
+
+METHODS
+  export_method
+    Export method in current class.
+
+      package  MyApp::Hoge;
+      use MyApp;
+      sub import {
+          my $class  = shift;
+          my $caller = caller;
+          $class->export_coderef($caller,'foo');
+      }
+      sub foo {
+        #Do something!
+      }
+
+      package  MyApp::Fuga;
+      use MyApp::Hoge;
+
+      sub hoge {
+        foo();
+      }
+
+  export_coderef
+    Export code reference.
+
+      package  MyApp::Hoge;
+      use MyApp;
+      sub import {
+          my $class  = shift;
+          my $caller = caller;
+          $class->export_metod($caller,'byaa',sub { 'umai' });
+      }
+
+      package  MyApp::Fuga;
+      use MyApp::Hoge;
+
+      sub hoge {
+        byaa();
+      }
+
+  subclass
+    Load sub class for your application.
+
+      package  MyApp::Hoge;
+      use MyApp;
+      sub foo {
+        #Do something!
+      }
+
+      package  MyApp::Fuga;
+      use MyApp;
+
+      sub hoge {
+        subclass('Hoge')->foo;
+      }
 
 AUTHOR
     Nishibayashi Takuji <takuji {at} senchan.jp>

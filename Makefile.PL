@@ -6,6 +6,16 @@ all_from 'lib/Castella.pm';
 readme_from 'lib/Castella.pm';
 
 # requires '';
+requires 'Class::Accessor::Lite';
+requires 'Class::Data::Inheritable';
+requires 'Class::Load';
+requires 'Data::Section::Simple';
+requires 'parent';
+requires 'Plack::Request';
+requires 'Plack::Response';
+requires 'Text::Xslate';
+requires 'Try::Tiny';
+requires 'UNIVERSAL::can';
 
 tests 't/*.t';
 author_tests 'xt';
