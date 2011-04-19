@@ -3,10 +3,23 @@ use strict;
 use warnings;
 our $VERSION = '0.01';
 
+use parent 'Class::Data::Inheritable';
+
+use Class::Accessor::Lite (
+    new => 1,
+    ro  => [qw(req res stash)],
+);
+
 use Carp ();
 use Class::Load ':all';
+use Data::Section::Simple;
+use Text::Xslate;
 use Try::Tiny;
 use UNIVERSAL::can;
+
+use Castella::Exception;
+use Castella::Request;
+use Castella::Response;
 
 sub import {
     my $class  = shift;
@@ -15,18 +28,28 @@ sub import {
     strict->import;
     warnings->import;
 
-    if ( $_[0] && $_[0] eq '-base' ) {
-        my $attr = {};
-        export_coderef($caller, 'attr', sub { $attr });
-        $class->export_method($caller, 'app');
-        $class->export_method($caller, 'sub_class');
-    } else {
-        export_coderef($caller, 'sub_class', sub { shift; $class->sub_class(@_); });
-    }
-    my @functions = qw/
+    my @functions = qw(
         export_method
         export_coderef
-    /;
+    );
+    if ( $_[0] && $_[0] eq '-util' ) {
+        #export utils
+        export_coderef($caller, 'sub_class', sub { shift; $class->sub_class(@_); });
+    } else {
+        #base class
+        {
+            no strict 'refs';
+            unshift @{"$caller\::ISA"}, $class;
+        }
+        my $attr = {};
+        export_coderef($caller, 'attr', sub { $attr });
+        #make action_table
+        $caller->mk_classdata(action_table => []);
+        #make attributes
+        $caller->mk_classdata(attr => {});
+        push @functions, qw(post get action run);
+    }
+    #Export DSL
     for my $function ( @functions ) {
         $class->export_method($caller, $function);
     }
@@ -66,11 +89,38 @@ sub sub_class {
 
 sub app {
     my $class = shift;
-    my $router = $class->get_router;
     return sub {
         my $env = shift;
         try {
-            $router->($class, $env);
+            my $path = $env->{PATH_INFO};
+            my $code;
+            for my $action ( @{$class->action_table} ) {
+                if ( $path =~ $action->{regex} && ( !defined $action->{method} || $action->{method} eq $env->{REQUEST_METHOD} ) ) {
+                    $code = $action->{code};
+                    last;
+                }
+
+            }
+            Castella::Exception::HTTP::NotFound->throw unless $code;
+            my $c = $class->new(
+                req   => Castella::Request->new($env),
+                res   => Castella::Response->new,
+                stash => {},
+                env   => $env,
+            );
+            $code->($c);
+            my $templates = Data::Section::Simple->new($class)->get_data_section;
+            my $xslate = Text::Xslate->new(
+                path => $templates,
+            );
+            my $body = $xslate->render($path,$c->stash);
+            Castella::Exception::HTTP::Success->throw(
+                res => [
+                    200,
+                    ['Content-Type' => 'text/html'],
+                    [$body]
+                ],
+            );
         } catch {
             my $e = shift;
             if( ref($e) && $e->isa('Castella::Exception::HTTP') ) {
@@ -84,25 +134,71 @@ sub app {
     };
 }
 
+sub run (&) { $_[0] }
+
+sub add_action {
+    my ($class, $regex, $options, $code, $method) = @_;
+    push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code , options => $options, method => $method};
+}
+sub action ($$) {
+    my ($regex, $code) = @_;
+    my $class = caller;
+    push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code , template => $regex};
+}
+
+sub post ($$) {
+    my ($regex, $code) = @_;
+    my $class = caller;
+    push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code, template => $regex, method => 'POST'};
+}
+
+sub get ($$) {
+    my ($regex, $code) = @_;
+    my $class = caller;
+    push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code, template => $regex, method => 'GET'};
+}
+
 1;
 __END__
 =encoding utf8
 
 =head1 NAME
 
-Castella - A web application framework for PSGI/Plack
+Castella - Sinatra like web application framework for PSGI/Plack
 
 =head1 SYNOPSIS
 
   package  MyApp;
-  use Castella -base;
+  use Castella;
 
-  package  MyApp::SomeModule;
-  use MyApp;
+  get '/' => run {
+        my $self = shift;
+        $self->stash->{message} = 'Hello Castella world!';
+  };
+  post '/' => run {
+        my $self = shift;
+        $self->stash->{message} = 'Castella is sweet!';
+  };
+  1;
+  __DATA__
+  @@ /
+  <!DOCTYPE HTML>
+  <html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>hogehoge</title>
+  </head>
+  <body>
+    <: $message :>
+    <form action="/" method="post">
+        <button  type="submit">press me!</button>
+    </form>
+  </body>
+  </html>
 
 =head1 DESCRIPTION
 
-Castella is oreore waf!
+Castella is oreore waf which like Sinatra on Ruby
 
 Write code easily!
 
@@ -113,7 +209,7 @@ Write code easily!
 Export method in current class.
 
   package  MyApp::Hoge;
-  use MyApp;
+  use MyApp -utils;
   sub import {
       my $class  = shift;
       my $caller = caller;
@@ -135,7 +231,7 @@ Export method in current class.
 Export code reference.
 
   package  MyApp::Hoge;
-  use MyApp;
+  use MyApp -utils;
   sub import {
       my $class  = shift;
       my $caller = caller;
@@ -154,13 +250,13 @@ Export code reference.
 Load sub class for your application.
 
   package  MyApp::Hoge;
-  use MyApp;
+  use MyApp -utils;
   sub foo {
     #Do something!
   }
 
   package  MyApp::Fuga;
-  use MyApp;
+  use MyApp -utils;
 
   sub hoge {
     subclass('Hoge')->foo;

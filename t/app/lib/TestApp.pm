@@ -1,5 +1,5 @@
 package TestApp;
-use Castella::Lite;
+use Castella;
 
 get '/' => run {
     my $self = shift;
