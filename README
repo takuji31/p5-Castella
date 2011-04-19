@@ -1,15 +1,37 @@
 NAME
-    Castella - A web application framework for PSGI/Plack
+    Castella - Sinatra like web application framework for PSGI/Plack
 
 SYNOPSIS
       package  MyApp;
-      use Castella -base;
+      use Castella;
 
-      package  MyApp::SomeModule;
-      use MyApp;
+      get '/' => run {
+            my $self = shift;
+            $self->stash->{message} = 'Hello Castella world!';
+      };
+      post '/' => run {
+            my $self = shift;
+            $self->stash->{message} = 'Castella is sweet!';
+      };
+      1;
+      __DATA__
+      @@ /
+      <!DOCTYPE HTML>
+      <html lang="ja">
+      <head>
+        <meta charset="UTF-8">
+        <title>hogehoge</title>
+      </head>
+      <body>
+        <: $message :>
+        <form action="/" method="post">
+            <button  type="submit">press me!</button>
+        </form>
+      </body>
+      </html>
 
 DESCRIPTION
-    Castella is oreore waf!
+    Castella is oreore waf which like Sinatra on Ruby
 
     Write code easily!
 
@@ -18,7 +40,7 @@ METHODS
     Export method in current class.
 
       package  MyApp::Hoge;
-      use MyApp;
+      use MyApp -utils;
       sub import {
           my $class  = shift;
           my $caller = caller;
@@ -39,7 +61,7 @@ METHODS
     Export code reference.
 
       package  MyApp::Hoge;
-      use MyApp;
+      use MyApp -utils;
       sub import {
           my $class  = shift;
           my $caller = caller;
@@ -57,13 +79,13 @@ METHODS
     Load sub class for your application.
 
       package  MyApp::Hoge;
-      use MyApp;
+      use MyApp -utils;
       sub foo {
         #Do something!
       }
 
       package  MyApp::Fuga;
-      use MyApp;
+      use MyApp -utils;
 
       sub hoge {
         subclass('Hoge')->foo;
