@@ -1,5 +1,5 @@
 package  Castella::Request;
-use Castella;
+use Castella -util;
 
 use parent qw/Plack::Request/;
 

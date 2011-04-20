@@ -1,5 +1,5 @@
 package Castella::Exception;
-use Castella;
+use Castella -util;
 use overload '""' => \&inspect;
 
 use Carp ();

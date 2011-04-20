@@ -1,5 +1,5 @@
 package  Castella::Response;
-use Castella;
+use Castella -util;
 
 use parent qw/Plack::Response/;
 

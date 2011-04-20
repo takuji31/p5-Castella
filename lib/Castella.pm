@@ -33,7 +33,7 @@ sub import {
         export_coderef
     );
     if ( $_[0] && $_[0] eq '-util' ) {
-        #export utils
+        #export util
         export_coderef($caller, 'sub_class', sub { shift; $class->sub_class(@_); });
     } else {
         #base class
@@ -211,7 +211,7 @@ Write code easily!
 Export method in current class.
 
   package  MyApp::Hoge;
-  use MyApp -utils;
+  use MyApp -util;
   sub import {
       my $class  = shift;
       my $caller = caller;
@@ -233,7 +233,7 @@ Export method in current class.
 Export code reference.
 
   package  MyApp::Hoge;
-  use MyApp -utils;
+  use MyApp -util;
   sub import {
       my $class  = shift;
       my $caller = caller;
@@ -252,16 +252,17 @@ Export code reference.
 Load sub class for your application.
 
   package  MyApp::Hoge;
-  use MyApp -utils;
+  use MyApp -util;
   sub foo {
     #Do something!
   }
 
   package  MyApp::Fuga;
-  use MyApp -utils;
+  use MyApp -util;
 
   sub hoge {
-    subclass('Hoge')->foo;
+    my $class = shift;
+    $class->subclass('Hoge')->foo;
   }
 
 =head1 AUTHOR
