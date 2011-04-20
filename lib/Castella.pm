@@ -41,8 +41,6 @@ sub import {
             no strict 'refs';
             unshift @{"$caller\::ISA"}, $class;
         }
-        my $attr = {};
-        export_coderef($caller, 'attr', sub { $attr });
         #make action_table
         $caller->mk_classdata(action_table => []);
         #make attributes
