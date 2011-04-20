@@ -82,7 +82,9 @@ sub export_coderef {
 }
 
 sub sub_class {
-    my $sub_class =  join '::', @_;
+    my $class = shift;
+    $class = ref($class) if ref($class);
+    my $sub_class =  join '::', $class, @_;
     load_class($sub_class);
     return $sub_class;
 }
