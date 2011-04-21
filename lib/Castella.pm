@@ -94,25 +94,25 @@ sub app {
     };
 }
 
-sub run (&) { $_[0] }
+sub run (&) { $_[0] } ##no critic
 
 sub add_action {
     my ($class, $regex, $options, $code, $method) = @_;
     push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code , options => $options, method => $method};
 }
-sub action ($$) {
+sub action ($$) { ##no critic
     my ($regex, $code) = @_;
     my $class = caller;
     push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code , template => $regex};
 }
 
-sub post ($$) {
+sub post ($$) { ##no critic
     my ($regex, $code) = @_;
     my $class = caller;
     push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code, template => $regex, method => 'POST'};
 }
 
-sub get ($$) {
+sub get ($$) { ##no critic
     my ($regex, $code) = @_;
     my $class = caller;
     push @{$class->action_table}, {regex => qr{^$regex$} , code =>  $code, template => $regex, method => 'GET'};
@@ -158,7 +158,7 @@ Castella - Sinatra like web application framework for PSGI/Plack
 
 =head1 DESCRIPTION
 
-Castella is oreore waf which like Sinatra on Ruby
+Castella is web application framework which like Sinatra on Ruby
 
 Write code easily!
 
