@@ -10,6 +10,7 @@ requires 'Class::Accessor::Lite';
 requires 'Class::Data::Inheritable';
 requires 'Class::Load';
 requires 'Data::Section::Simple';
+requires 'Exporter::Lite';
 requires 'parent';
 requires 'Plack::Request';
 requires 'Plack::Response';

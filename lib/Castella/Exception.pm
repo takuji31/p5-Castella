@@ -1,5 +1,6 @@
 package Castella::Exception;
-use Castella -util;
+use strict;
+use warnings;
 use overload '""' => \&inspect;
 
 use Carp ();
@@ -8,6 +9,8 @@ use Class::Accessor::Lite (
     rw  => [qw/ msg /],
 );
 use Class::Load qw/:all/;
+
+use Castella::Utils;
 
 sub import {
     my $class  = shift;

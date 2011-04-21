@@ -1,5 +1,7 @@
 package  Castella::Exception::HTTP;
-use Castella -util;
+use strict;
+use warnings;
+use Castella::Utils;
 
 use parent qw/Castella::Exception/;
 

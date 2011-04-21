@@ -20,6 +20,7 @@ use UNIVERSAL::can;
 use Castella::Exception;
 use Castella::Request;
 use Castella::Response;
+use Castella::Utils;
 
 sub import {
     my $class  = shift;
@@ -28,63 +29,22 @@ sub import {
     strict->import;
     warnings->import;
 
-    my @functions = qw(
-        export_method
-        export_coderef
-    );
-    if ( $_[0] && $_[0] eq '-util' ) {
-        #export util
-        export_coderef($caller, 'sub_class', sub { shift; $class->sub_class(@_); });
-    } else {
-        #base class
-        {
-            no strict 'refs';
-            unshift @{"$caller\::ISA"}, $class;
-        }
-        #make action_table
-        $caller->mk_classdata(action_table => []);
-        #make attributes
-        $caller->mk_classdata(attr => {});
-        push @functions, qw(post get action run);
+    #base class
+    {
+        no strict 'refs';
+        unshift @{"$caller\::ISA"}, $class;
     }
+
+    #make action_table
+    $caller->mk_classdata(action_table => []);
+    #make attributes
+    $caller->mk_classdata(attr => {});
+
+    my @functions = qw(post get action run);
     #Export DSL
     for my $function ( @functions ) {
         $class->export_method($caller, $function);
     }
-}
-
-sub export_method {
-    my ( $class, $target, $method_name ) = @_;
-    if ( ref($target) ) {
-        $target = ref($target);
-    }
-    my $code = $class->can($method_name);
-    unless ($code) {
-        Carp::croak("Method $class\::$method_name does not exists!");
-    }
-    export_coderef( $target, $method_name, $code );
-}
-
-sub export_coderef {
-    my ( $target, $method_name, $code ) = @_;
-    if ( ref($target) ) {
-        $target = ref($target);
-    }
-    unless ( ref($code) eq 'CODE' ) {
-        Carp::croak("This is not code reference! $code");
-    }
-    {
-        no strict 'refs';    ## no critic
-        *{"$target\::$method_name"} = $code;
-    }
-}
-
-sub sub_class {
-    my $class = shift;
-    $class = ref($class) if ref($class);
-    my $sub_class =  join '::', $class, @_;
-    load_class($sub_class);
-    return $sub_class;
 }
 
 sub app {
@@ -203,65 +163,6 @@ Castella is oreore waf which like Sinatra on Ruby
 Write code easily!
 
 =head1 METHODS
-
-=head2 export_method
-
-Export method in current class.
-
-  package  MyApp::Hoge;
-  use MyApp -util;
-  sub import {
-      my $class  = shift;
-      my $caller = caller;
-      $class->export_coderef($caller,'foo');
-  }
-  sub foo {
-    #Do something!
-  }
-
-  package  MyApp::Fuga;
-  use MyApp::Hoge;
-
-  sub hoge {
-    foo();
-  }
-
-=head2 export_coderef
-
-Export code reference.
-
-  package  MyApp::Hoge;
-  use MyApp -util;
-  sub import {
-      my $class  = shift;
-      my $caller = caller;
-      $class->export_metod($caller,'byaa',sub { 'umai' });
-  }
-
-  package  MyApp::Fuga;
-  use MyApp::Hoge;
-
-  sub hoge {
-    byaa();
-  }
-
-=head2 subclass
-
-Load sub class for your application.
-
-  package  MyApp::Hoge;
-  use MyApp -util;
-  sub foo {
-    #Do something!
-  }
-
-  package  MyApp::Fuga;
-  use MyApp -util;
-
-  sub hoge {
-    my $class = shift;
-    $class->subclass('Hoge')->foo;
-  }
 
 =head1 AUTHOR
 
